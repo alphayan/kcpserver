@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/xtaci/kcp-go"
+	"net"
 )
 
 func main() {
@@ -19,17 +20,18 @@ func main() {
 			fmt.Println("err accepting: " + err.Error())
 			return
 		}
+		conn.SetNoDelay(1, 10, 2, 1)
+		conn.SetWindowSize(1024, 1024)
+		conn.SetACKNoDelay(true)
 		go doServerStaff(conn)
 	}
 }
 
-func doServerStaff(conn *kcp.UDPSession) {
+func doServerStaff(conn net.Conn) {
 	defer conn.Close()
 	for {
 		buf := make([]byte, 4096)
-		conn.SetNoDelay(1, 10, 2, 1)
-		conn.SetWindowSize(32, 32)
-		conn.SetACKNoDelay(true)
+
 		n, err := conn.Read(buf)
 		if err != nil {
 			fmt.Println("err reading")
