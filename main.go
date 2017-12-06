@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	lis, err := kcp.ListenWithOptions(LISTENING_PORT, nil, DATA_SHARD, PARITY_SHARD)
+	lis, err := kcp.ListenWithOptions(LISTENING_PORT, nil, 0, 0)
 	if err != nil {
 		fmt.Println("server line 41: ", err)
 		return
