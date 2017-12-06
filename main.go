@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/xtaci/kcp-go"
 	"net"
+
+	"strings"
+
+	"github.com/alphayan/kcp-go"
 )
+
+var addrs []string
 
 func main() {
 	lis, err := kcp.ListenWithOptions(LISTENING_PORT, nil, 0, 0)
@@ -16,6 +20,14 @@ func main() {
 
 	for {
 		conn, err := lis.AcceptKCP()
+		remote := conn.RemoteAddr().String()
+		if len(addrs) > 0 {
+			if !inSlice(remote, addrs) {
+				addrs = append(addrs, remote)
+			}
+		} else {
+			addrs = append(addrs, remote)
+		}
 		if err != nil {
 			fmt.Println("err accepting: " + err.Error())
 			return
@@ -27,7 +39,7 @@ func main() {
 	}
 }
 
-func doServerStaff(conn net.Conn) {
+func doServerStaff(conn *kcp.UDPSession) {
 	defer conn.Close()
 	for {
 		buf := make([]byte, 4096)
@@ -38,7 +50,22 @@ func doServerStaff(conn net.Conn) {
 			return
 		}
 		fmt.Println("received data: ", string(buf[:n]))
-		conn.Write(buf[:n])
+		for _, v := range addrs {
+			udpaddr, err := net.ResolveUDPAddr("udp", v)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			conn.WriteTo(buf[:n], udpaddr)
+		}
+
 	}
 }
-
+func inSlice(s string, sl []string) bool {
+	for _, v := range sl {
+		if strings.EqualFold(s, v) {
+			return true
+		}
+	}
+	return false
+}
